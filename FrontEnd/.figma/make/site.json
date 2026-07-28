@@ -1,0 +1,10 @@
+{
+  "description": "VulnGuard is a professional vulnerability scanner platform designed for enterprises, providing advanced security assessments with a sleek, sophisticated interface.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
