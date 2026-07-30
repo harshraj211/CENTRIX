@@ -1,0 +1,166 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --color-canvas:      #090c14;
+  --color-surface:     #0d1118;
+  --color-panel:       #0f1420;
+  --color-card:        #131c2a;
+  --color-elevated:    #192636;
+  --color-border:      #1a2030;
+  --color-border-hi:   #242e42;
+
+  --color-ink:         #dce4f0;
+  --color-ink-2:       #8590a2;
+  --color-ink-3:       #4d5669;
+
+  --color-accent:      #5a57ff;
+  --color-cyan:        #22b4cc;
+  --color-emerald:     #10b981;
+
+  --color-critical:    #e54646;
+  --color-high:        #e07833;
+  --color-medium:      #c99a1a;
+  --color-low:         #3d82f6;
+  --color-info:        #64748b;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius-sm: 2px;
+  --radius:    4px;
+  --radius-md: 6px;
+}
+
+html,
+body {
+  background-color: #090c14;
+  color: #dce4f0;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar          { width: 5px; height: 5px; }
+::-webkit-scrollbar-track    { background: transparent; }
+::-webkit-scrollbar-thumb    { background: #1a2030; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #242e42; }
+
+* { scrollbar-width: thin; scrollbar-color: #1a2030 transparent; }
+
+::selection { background: rgba(148, 163, 184, 0.2); }
+
+input:focus,
+textarea:focus,
+select:focus { outline: none; }
+
+/* ── PREMIUM 3D & DEPTH SYSTEM ── */
+.card-3d {
+  position: relative;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+}
+.card-3d:hover {
+  transform: translateY(-5px) rotateX(2.5deg) rotateY(-2.5deg);
+  box-shadow: 
+    0 24px 48px -12px rgba(0, 0, 0, 0.65),
+    0 0 30px 2px rgba(90, 87, 255, 0.22),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.08);
+  border-color: rgba(90, 87, 255, 0.35);
+}
+
+.node-3d {
+  transform-style: preserve-3d;
+  perspective: 800px;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+}
+.node-3d:hover {
+  transform: scale(1.08) translateZ(12px);
+  filter: drop-shadow(0 0 12px currentColor);
+}
+
+@keyframes float3d {
+  0%, 100% {
+    transform: translateY(0px) rotateX(0deg) rotateY(0deg) translateZ(0px);
+  }
+  50% {
+    transform: translateY(-6px) rotateX(2deg) rotateY(-2deg) translateZ(8px);
+  }
+}
+.animate-float-3d {
+  animation: float3d 6s ease-in-out infinite;
+}
+
+.hologram-panel {
+  position: relative;
+  overflow: hidden;
+}
+.hologram-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-size: 20px 20px;
+  background-image: 
+    linear-gradient(to right, rgba(90, 87, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(90, 87, 255, 0.03) 1px, transparent 1px);
+  opacity: 0.85;
+}
+.hologram-panel::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(90, 87, 255, 0.4), transparent);
+  animation: scanline 4s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(500px); }
+}
+
+@media print {
+  #root > div {
+    display: none !important;
+  }
+  body, html {
+    background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .pdf-printable-area {
+    display: block !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 9999999 !important;
+    background: white !important;
+    overflow: visible !important;
+  }
+  .pdf-printable-area > div {
+    page-break-after: always !important;
+    page-break-inside: avoid !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 auto !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    padding: 20mm !important;
+    box-sizing: border-box !important;
+  }
+}
+
