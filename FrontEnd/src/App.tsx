@@ -4,32 +4,62 @@ import {
   Target,
   Cpu,
   Terminal,
+  Radio,
+  Crosshair,
+  Code2,
+  GitCompare,
   ShieldAlert,
+  ShieldCheck,
+  KeyRound,
+  Satellite,
   FolderOpen,
   FileText,
+  Zap,
   Settings,
   Search,
   Bell,
+  BarChart3,
+  CalendarClock,
 } from "lucide-react"
 import Overview from "./pages/Overview"
 import ScanSetup from "./pages/ScanSetup"
 import AutomatedScan from "./pages/AutomatedScan"
 import ManualTesting from "./pages/ManualTesting"
+import ProxyHistory from "./pages/ProxyHistory"
+import Intruder from "./pages/Intruder"
+import Decoder from "./pages/Decoder"
+import Comparer from "./pages/Comparer"
 import Findings from "./pages/Findings"
 import Evidence from "./pages/Evidence"
 import Reports from "./pages/Reports"
 import SettingsPage from "./pages/Settings"
+import ProofMode from "./pages/ProofMode"
+import NucleiCve from "./pages/NucleiCve"
+import RiskPosture from "./pages/RiskPosture"
+import AuthorizationMatrix from "./pages/AuthorizationMatrix"
+import OobMonitor from "./pages/OobMonitor"
+import ScheduledScans from "./pages/ScheduledScans"
 
-export type Page = "overview" | "scan-setup" | "automated-scan" | "manual-testing" | "findings" | "evidence" | "reports" | "settings"
+export type Page = "overview" | "scan-setup" | "automated-scan" | "scheduled-scans" | "manual-testing" | "proxy-history" | "intruder" | "decoder" | "comparer" | "findings" | "evidence" | "proof-mode" | "auth-matrix" | "oob-monitor" | "nuclei-cve" | "risk-posture" | "reports" | "settings"
 
 const NAV: { id: Page; label: string; Icon: React.ElementType; badge?: string }[] =
   [
     { id: "overview", label: "Overview", Icon: LayoutDashboard },
     { id: "scan-setup", label: "Scan Setup", Icon: Target },
     { id: "automated-scan", label: "Automated Scan", Icon: Cpu, badge: "0" },
-    { id: "manual-testing", label: "Manual Testing", Icon: Terminal },
+    { id: "scheduled-scans", label: "Scheduled Scans", Icon: CalendarClock },
+    { id: "manual-testing", label: "Repeater", Icon: Terminal },
+    { id: "proxy-history", label: "Proxy History", Icon: Radio },
+    { id: "intruder", label: "Intruder", Icon: Crosshair },
+    { id: "decoder", label: "Decoder", Icon: Code2 },
+    { id: "comparer", label: "Comparer", Icon: GitCompare },
     { id: "findings", label: "Findings", Icon: ShieldAlert, badge: "0" },
     { id: "evidence", label: "Evidence", Icon: FolderOpen },
+    { id: "proof-mode", label: "Proof Mode", Icon: ShieldCheck },
+    { id: "auth-matrix", label: "Auth Matrix", Icon: KeyRound },
+    { id: "oob-monitor", label: "OOB Monitor", Icon: Satellite },
+    { id: "nuclei-cve", label: "Nuclei & CVE", Icon: Zap },
+    { id: "risk-posture", label: "Risk Posture", Icon: BarChart3 },
     { id: "reports", label: "Reports", Icon: FileText },
     { id: "settings", label: "Settings", Icon: Settings },
   ]
@@ -40,18 +70,14 @@ export interface PageProps {
 
 export default function App() {
   const [active, setActive] = useState<Page>("overview")
-  const [findingsCount, setFindingsCount] = useState(8)
-  const [scanActive, setScanActive] = useState(true)
-  const [scanProgress, setScanProgress] = useState(61)
+  const [findingsCount, setFindingsCount] = useState(0)
+  const [scanActive, setScanActive] = useState(false)
+  const [scanProgress, setScanProgress] = useState(0)
   const [repeaterRequest, setRepeaterRequest] = useState<any>(null)
-  const [findingsTab, setFindingsTab] = useState<"findings" | "sast" | "sca" | "threat-path">("findings")
   const [activeScanId, setActiveScanId] = useState<string | null>(null)
 
   const handleNavigate = (page: string, subTab?: string) => {
     setActive(page as Page)
-    if (page === "findings") {
-      setFindingsTab((subTab as any) || "findings")
-    }
   }
 
   const handleSendToRepeater = (reqData: any) => {
@@ -184,6 +210,7 @@ export default function App() {
               onNavigate={handleNavigate}
               findingsCount={findingsCount}
               scanActive={scanActive}
+              onScanSelected={setActiveScanId}
             />
           )}
           {active === "scan-setup" && (
@@ -204,6 +231,7 @@ export default function App() {
               activeScanId={activeScanId}
             />
           )}
+          {active === "scheduled-scans" && <ScheduledScans />}
           {active === "manual-testing" && (
             <ManualTesting
               onNavigate={handleNavigate}
@@ -211,12 +239,20 @@ export default function App() {
               setRepeaterRequest={setRepeaterRequest}
             />
           )}
+          {active === "proxy-history" && (
+            <ProxyHistory
+              onNavigate={handleNavigate}
+              onSendToRepeater={handleSendToRepeater}
+            />
+          )}
+          {active === "intruder" && <Intruder />}
+          {active === "decoder" && <Decoder />}
+          {active === "comparer" && <Comparer />}
           {active === "findings" && (
             <Findings
               onNavigate={handleNavigate}
               findingsCount={findingsCount}
               setFindingsCount={setFindingsCount}
-              initialTab={findingsTab}
             />
           )}
           {active === "evidence" && (
@@ -225,6 +261,11 @@ export default function App() {
               onSendToRepeater={handleSendToRepeater}
             />
           )}
+          {active === "proof-mode" && <ProofMode />}
+          {active === "auth-matrix" && <AuthorizationMatrix />}
+          {active === "oob-monitor" && <OobMonitor />}
+          {active === "nuclei-cve" && <NucleiCve />}
+          {active === "risk-posture" && <RiskPosture />}
           {active === "reports" && (
             <Reports
               onNavigate={handleNavigate}

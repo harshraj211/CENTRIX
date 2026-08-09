@@ -60,11 +60,18 @@ class FindingStatus(str, Enum):
 class ScanConfig(BaseModel):
     target: str = Field(..., description="Primary target URL")
     scope: list[str] = Field(default_factory=list, description="Scope rules / URL patterns")
+    imported_urls: list[str] = Field(default_factory=list, description="Endpoints imported from OpenAPI, Postman, HAR, or GraphQL")
+    imported_requests: list[dict] = Field(default_factory=list, description="Full imported API requests including method, headers, and sample body")
+    sequence_workflows: list[dict] = Field(default_factory=list, description="Stateful API sequence workflows to run before crawling/probing")
+    browser_workflows: list[dict] = Field(default_factory=list, description="Browser macro workflows to run before crawling/probing")
+    authorized: bool = Field(False, description="Operator confirms authorization to test this target")
     profile: ScanProfile = ScanProfile.full
     safety: SafetyLevel = SafetyLevel.standard
     depth: int = Field(default=3, ge=1, le=10)
     timeout: int = Field(default=30, ge=5, le=120)
-    concurrency: int = Field(default=25, ge=1, le=100)
+    concurrency: int = Field(default=10, ge=1, le=25)
+    max_requests: int = Field(default=500, ge=10, le=10_000)
+    respect_robots: bool = False
     auth_token: Optional[str] = None
     label: Optional[str] = None
     environment: str = "Production"
@@ -105,10 +112,23 @@ class Finding(BaseModel):
     cvss: Optional[float] = None
 
 
+class EvidenceArtifact(BaseModel):
+    id: str
+    scan_id: str
+    url: str
+    method: str = "GET"
+    status_code: int
+    content_type: str = ""
+    response_length: int = 0
+    response_excerpt: str = ""
+    response_headers: dict[str, str] = Field(default_factory=dict)
+    captured_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 # ── Report ────────────────────────────────────────────────────────
 class ReportConfig(BaseModel):
     scan_id: str
-    format: Literal["json", "html", "pdf"] = "json"
+    format: Literal["json", "html", "pdf", "sarif", "junit", "evidence"] = "json"
     report_type: Literal["technical", "executive", "compliance"] = "technical"
     target_scope: Optional[str] = None
 
@@ -125,6 +145,57 @@ class Report(BaseModel):
     size: str = "—"
     format: str = "json"
     content: Optional[str] = None   # rendered HTML/JSON string
+
+
+class ManualRequest(BaseModel):
+    scan_id: str
+    method: Literal["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"] = "GET"
+    url: str
+    headers: dict[str, str] = Field(default_factory=dict)
+    body: Optional[str] = None
+
+
+class ResponseComparison(BaseModel):
+    left_status: int
+    right_status: int
+    left_length: int
+    right_length: int
+    status_changed: bool
+    length_delta: int
+
+
+class FindingStatusUpdate(BaseModel):
+    status: FindingStatus
+
+
+class ApiImport(BaseModel):
+    format: Literal["openapi", "postman", "har", "graphql"]
+    document: dict
+    base_url: Optional[str] = None
+
+
+class AuthProfile(BaseModel):
+    id: str
+    name: str
+    role: str = "user"
+    headers: dict[str, str] = Field(default_factory=dict)
+    cookies: dict[str, str] = Field(default_factory=dict)
+    notes: str = ""
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AuthProfileInput(BaseModel):
+    name: str
+    role: str = "user"
+    headers: dict[str, str] = Field(default_factory=dict)
+    cookies: dict[str, str] = Field(default_factory=dict)
+    notes: str = ""
+
+
+class AuthMatrixRunRequest(BaseModel):
+    scan_id: str
+    request_ids: list[str] = Field(default_factory=list, max_length=30)
+    profile_ids: list[str] = Field(default_factory=list, max_length=6)
 
 
 # ── API Responses ──────────────────────────────────────────────────

@@ -15,6 +15,7 @@ from api.models import Finding, Severity, FindingStatus
 
 # ── Static lookup tables — O(1) ────────────────────────────────────────────
 _CWE_MAP: dict[str, str] = {
+    "csrf": "CWE-352",
     "sqli": "CWE-89",
     "xss": "CWE-79",
     "traversal": "CWE-22",
@@ -22,10 +23,28 @@ _CWE_MAP: dict[str, str] = {
     "missing_header": "CWE-693",
     "idor": "CWE-284",
     "ssrf": "CWE-918",
+    "jwt": "CWE-200",
+    "graphql": "CWE-200",
+    "graphql_introspection": "CWE-200",
+    "websocket": "CWE-200",
+    "ssti": "CWE-94",
+    "hpp": "CWE-235",
+    "command_injection": "CWE-78",
     "rce": "CWE-78",
+    "xxe": "CWE-611",
+    "mass_assignment": "CWE-915",
+    "race_condition": "CWE-362",
+    "vulnerable_component": "CWE-1104",
+    "crypto": "CWE-319",
+    "wordpress": "CWE-200",
+    "graphql_dos": "CWE-400",
+    "graphql_batching": "CWE-770",
+    "grpc_reflection": "CWE-200",
+    "flag": "CWE-200",
 }
 
 _CVSS_MAP: dict[str, float] = {
+    "csrf": 6.5,
     "sqli": 9.8,
     "xss": 7.2,
     "traversal": 9.1,
@@ -33,10 +52,28 @@ _CVSS_MAP: dict[str, float] = {
     "missing_header": 5.3,
     "idor": 8.1,
     "ssrf": 9.3,
+    "jwt": 5.3,
+    "graphql": 3.1,
+    "graphql_introspection": 5.3,
+    "websocket": 3.1,
+    "ssti": 9.1,
+    "hpp": 5.3,
+    "command_injection": 10.0,
     "rce": 10.0,
+    "xxe": 8.6,
+    "mass_assignment": 8.1,
+    "race_condition": 7.1,
+    "vulnerable_component": 7.5,
+    "crypto": 6.5,
+    "wordpress": 5.3,
+    "graphql_dos": 7.5,
+    "graphql_batching": 8.1,
+    "grpc_reflection": 5.3,
+    "flag": 7.5,
 }
 
 _SEVERITY_MAP: dict[str, Severity] = {
+    "csrf": Severity.medium,
     "sqli": Severity.critical,
     "xss": Severity.high,
     "traversal": Severity.critical,
@@ -44,10 +81,28 @@ _SEVERITY_MAP: dict[str, Severity] = {
     "missing_header": Severity.low,
     "idor": Severity.high,
     "ssrf": Severity.critical,
+    "jwt": Severity.low,
+    "graphql": Severity.info,
+    "graphql_introspection": Severity.low,
+    "websocket": Severity.info,
+    "ssti": Severity.critical,
+    "hpp": Severity.medium,
+    "command_injection": Severity.critical,
     "rce": Severity.critical,
+    "xxe": Severity.high,
+    "mass_assignment": Severity.high,
+    "race_condition": Severity.medium,
+    "vulnerable_component": Severity.high,
+    "crypto": Severity.medium,
+    "wordpress": Severity.low,
+    "graphql_dos": Severity.high,
+    "graphql_batching": Severity.high,
+    "grpc_reflection": Severity.low,
+    "flag": Severity.high,
 }
 
 _TITLE_MAP: dict[str, str] = {
+    "csrf": "Cross-Site Request Forgery (CSRF)",
     "sqli": "SQL Injection",
     "xss": "Reflected Cross-Site Scripting (XSS)",
     "traversal": "Path Traversal",
@@ -55,10 +110,28 @@ _TITLE_MAP: dict[str, str] = {
     "missing_header": "Missing Security Header",
     "idor": "Insecure Direct Object Reference (IDOR)",
     "ssrf": "Server-Side Request Forgery (SSRF)",
+    "jwt": "JWT Token Exposure",
+    "graphql": "GraphQL Surface Detected",
+    "graphql_introspection": "GraphQL Introspection Enabled",
+    "websocket": "WebSocket Surface Detected",
+    "ssti": "Server-Side Template Injection (SSTI)",
+    "hpp": "HTTP Parameter Pollution",
+    "command_injection": "Command Injection",
     "rce": "Remote Code Execution",
+    "xxe": "XML External Entity (XXE)",
+    "mass_assignment": "Mass Assignment",
+    "race_condition": "Race Condition",
+    "vulnerable_component": "Vulnerable or Outdated Component",
+    "crypto": "Cryptographic / Transport Weakness",
+    "wordpress": "WordPress Exposure",
+    "graphql_dos": "GraphQL Depth/Complexity Weakness",
+    "graphql_batching": "GraphQL Batching Bypass",
+    "grpc_reflection": "gRPC Reflection Enabled",
+    "flag": "Sensitive Flag or Secret Exposure",
 }
 
 _CATEGORY_MAP: dict[str, str] = {
+    "csrf": "Access Control",
     "sqli": "Injection",
     "xss": "XSS",
     "traversal": "Path Traversal",
@@ -66,10 +139,28 @@ _CATEGORY_MAP: dict[str, str] = {
     "missing_header": "Security Headers",
     "idor": "Access Control",
     "ssrf": "SSRF",
+    "jwt": "Authentication",
+    "graphql": "API Surface",
+    "graphql_introspection": "API Surface",
+    "websocket": "API Surface",
+    "ssti": "Injection",
+    "hpp": "Input Handling",
+    "command_injection": "Injection",
     "rce": "Injection",
+    "xxe": "Injection",
+    "mass_assignment": "Access Control",
+    "race_condition": "Business Logic",
+    "vulnerable_component": "Components",
+    "crypto": "Cryptography",
+    "wordpress": "CMS",
+    "graphql_dos": "API Surface",
+    "graphql_batching": "API Surface",
+    "grpc_reflection": "API Surface",
+    "flag": "Sensitive Data",
 }
 
 _RECOMMENDATION_MAP: dict[str, str] = {
+    "csrf": "Use framework-generated anti-CSRF tokens on all state-changing requests and validate SameSite cookie protections.",
     "sqli": (
         "Use parameterized queries or prepared statements for all database interactions. "
         "Never concatenate user input into SQL strings. Adopt an ORM with built-in protections."
@@ -98,9 +189,63 @@ _RECOMMENDATION_MAP: dict[str, str] = {
         "Validate and allowlist URLs that the server is permitted to fetch. "
         "Block requests to internal IP ranges (169.254.0.0/16, 10.0.0.0/8, etc.)."
     ),
+    "jwt": (
+        "Avoid returning tokens in cacheable responses or logs. Mark token cookies HttpOnly, Secure, and SameSite, "
+        "and keep token lifetimes short."
+    ),
+    "graphql": (
+        "Review GraphQL authorization, disable introspection in production where appropriate, "
+        "and enforce query depth and complexity limits."
+    ),
+    "graphql_introspection": (
+        "Disable GraphQL introspection in production where appropriate, require authentication for schema access, "
+        "and enforce query complexity limits."
+    ),
+    "websocket": (
+        "Require authentication and origin checks during WebSocket upgrades, and validate every message server-side."
+    ),
+    "ssti": (
+        "Do not render untrusted input as template source. Use safe template APIs and strict allowlists for dynamic content."
+    ),
+    "hpp": (
+        "Canonicalize duplicate parameters before authorization and validation. Reject ambiguous requests at the edge."
+    ),
+    "command_injection": (
+        "Avoid shell invocation with user input. Use language-native APIs and allowlist any permitted command arguments."
+    ),
     "rce": (
         "Never pass user input to shell commands. "
         "Use language-native APIs instead of shell invocations."
+    ),
+    "xxe": (
+        "Disable external entity resolution in XML parsers and reject untrusted XML where possible."
+    ),
+    "mass_assignment": (
+        "Bind only allowlisted fields server-side. Ignore privilege fields such as role, is_admin, and permissions from client input."
+    ),
+    "race_condition": (
+        "Protect state-changing operations with server-side locking, idempotency keys, or transaction constraints."
+    ),
+    "vulnerable_component": (
+        "Upgrade the affected component to a supported version and remove version disclosures where possible."
+    ),
+    "crypto": (
+        "Enforce HTTPS, secure cookies, modern TLS, HSTS, and avoid exposing sensitive values in responses."
+    ),
+    "wordpress": (
+        "Restrict exposed WordPress endpoints, remove unnecessary public files, and keep WordPress/core plugins updated."
+    ),
+    "graphql_dos": (
+        "Enforce GraphQL query depth, complexity, cost, timeout, and rate limits."
+    ),
+    "graphql_batching": (
+        "Apply authentication, authorization, and rate limits per operation inside GraphQL batched requests."
+    ),
+    "grpc_reflection": (
+        "Disable gRPC reflection in production unless it is required and protected by authentication."
+    ),
+    "flag": (
+        "Remove exposed secrets/flags from responses and rotate any sensitive values that may have leaked."
     ),
 }
 
@@ -115,9 +260,14 @@ async def run(
 
     seen: set[str] = set()   # O(1) dedup key
     findings: list[Finding] = []
+    suppressed_noise = 0
 
     for vuln in raw_vulns:
         vtype = vuln.get("type", "unknown")
+        if vtype == "missing_header":
+            suppressed_noise += 1
+            continue
+
         url = vuln.get("url", "")
         param = vuln.get("param", "")
         payload = vuln.get("payload", "")
@@ -125,7 +275,8 @@ async def run(
         confidence = vuln.get("confidence", "Tentative")
 
         # Dedup key: hash of (type, url, param) — O(1) set lookup
-        dedup_key = hashlib.md5(f"{vtype}:{url}:{param}".encode()).hexdigest()
+        dedup_basis = f"{vtype}:{str(param).lower()}" if vtype == "missing_header" else f"{vtype}:{url}:{param}"
+        dedup_key = hashlib.md5(dedup_basis.encode()).hexdigest()
         if dedup_key in seen:
             continue
         seen.add(dedup_key)
@@ -157,4 +308,6 @@ async def run(
                   f"{sev} — {title} @ {url} [{param}]")
 
     await log(f"[SUCCESS] Analysis complete — {len(findings)} unique findings")
+    if suppressed_noise:
+        await log(f"[INFO] Suppressed {suppressed_noise} missing security-header telemetry items")
     return findings

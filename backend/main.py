@@ -6,10 +6,12 @@ Starts the server with:
 """
 from __future__ import annotations
 
+import asyncio
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import scan, findings, reports, ws
+from api.routes import scan, findings, reports, ws, manual, imports, evidence, integrations, proof, authz, oob, schedules
 
 app = FastAPI(
     title="VulnGuard API",
@@ -37,6 +39,19 @@ app.include_router(scan.router)
 app.include_router(findings.router)
 app.include_router(reports.router)
 app.include_router(ws.router)
+app.include_router(manual.router)
+app.include_router(imports.router)
+app.include_router(evidence.router)
+app.include_router(integrations.router)
+app.include_router(proof.router)
+app.include_router(authz.router)
+app.include_router(oob.router)
+app.include_router(schedules.router)
+
+
+@app.on_event("startup")
+async def start_local_scheduler():
+    asyncio.create_task(schedules.scheduler_loop())
 
 
 @app.get("/")

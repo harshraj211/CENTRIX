@@ -13,6 +13,7 @@ from typing import Callable, Awaitable
 from urllib.parse import urljoin, urlparse
 
 import aiohttp
+from scanner.safety import TargetSafetyError, ensure_public_target, url_in_scope
 
 
 class _LinkParser(HTMLParser):
@@ -31,13 +32,35 @@ class _LinkParser(HTMLParser):
         if tag == "a" and "href" in attr:
             self.links.append(urljoin(self.base, attr["href"]))
         elif tag == "form":
-            self._current_form = {"action": urljoin(self.base, attr.get("action", "")),
-                                   "method": attr.get("method", "GET").upper()}
+            self._current_form = {
+                "action": urljoin(self.base, attr.get("action", "") or self.base),
+                "method": attr.get("method", "GET").upper(),
+                "fields": [],
+            }
             self._current_inputs = []
         elif tag == "input" and self._current_form is not None:
             name = attr.get("name", "")
             if name:
                 self._current_inputs.append(name)
+                self._current_form["fields"].append({
+                    "name": name,
+                    "type": attr.get("type", "text").lower(),
+                    "value": attr.get("value", ""),
+                })
+        elif tag == "textarea" and self._current_form is not None:
+            name = attr.get("name", "")
+            if name:
+                self._current_inputs.append(name)
+                self._current_form["fields"].append({"name": name, "type": "textarea", "value": ""})
+        elif tag == "button" and self._current_form is not None:
+            name = attr.get("name", "")
+            if name:
+                self._current_inputs.append(name)
+                self._current_form["fields"].append({
+                    "name": name,
+                    "type": attr.get("type", "submit").lower(),
+                    "value": attr.get("value", "Submit"),
+                })
 
     def handle_endtag(self, tag: str):
         if tag == "form" and self._current_form:
@@ -59,21 +82,36 @@ async def run(
     depth: int = 3,
     timeout: int = 20,
     concurrency: int = 20,
+    scope: list[str] | None = None,
+    robots_blocked_paths: list[str] | None = None,
+    max_urls: int = 125,
+    seed_urls: list[str] | None = None,
 ) -> dict:
     """Returns all unique URLs found + forms with their inputs."""
     await log(f"[INFO] Starting crawl from {target} (depth={depth}, concurrency={concurrency})...")
 
     visited: set[str] = set()
     forms: list[dict] = []
+    evidence: list[dict] = []
+    scope = scope or []
+    robots_blocked_paths = robots_blocked_paths or []
     sem = asyncio.Semaphore(concurrency)
 
     # Seed with discovered paths
-    seeds = [target] + [target.rstrip("/") + p for p in discovered_paths[:20]]
+    seeds = [target] + [target.rstrip("/") + p for p in discovered_paths[:20]] + (seed_urls or [])
 
     async def crawl(url: str, current_depth: int) -> None:
         # O(1) dedup
-        clean = url.split("#")[0].split("?")[0]
-        if clean in visited or current_depth > depth or not _same_origin(target, url):
+        clean = url.split("#")[0]
+        path = urlparse(clean).path or "/"
+        if (len(visited) >= max_urls or clean in visited or current_depth > depth or not _same_origin(target, url)
+                or not url_in_scope(clean, target, scope)
+                or any(path.startswith(blocked) for blocked in robots_blocked_paths)):
+            return
+        try:
+            await ensure_public_target(clean)
+        except TargetSafetyError:
+            await log(f"[WARN] Skipping unsafe URL: {clean}")
             return
         visited.add(clean)
 
@@ -83,7 +121,7 @@ async def run(
                     async with session.get(
                         url,
                         timeout=aiohttp.ClientTimeout(total=timeout),
-                        allow_redirects=True,
+                        allow_redirects=False,
                         ssl=False,
                         headers={"User-Agent": "VulnGuard/4.0 SecurityScanner"},
                     ) as resp:
@@ -91,6 +129,7 @@ async def run(
                         if "text/html" not in content_type and "application/json" not in content_type:
                             return
                         body = await resp.text(errors="replace")
+                        evidence.append({"url": clean, "status_code": resp.status, "content_type": content_type, "response_length": len(body), "response_excerpt": body[:2000], "response_headers": dict(resp.headers), "forms": []})
             except Exception as e:
                 await log(f"[WARN] Crawl error {url}: {e}")
                 return
@@ -102,11 +141,15 @@ async def run(
             pass
 
         forms.extend(parser.forms)
+        for captured in reversed(evidence):
+            if captured.get("url") == clean:
+                captured["forms"] = parser.forms
+                break
 
         # Recurse concurrently on new links
         children = [
             link for link in parser.links
-            if link.split("#")[0].split("?")[0] not in visited
+            if link.split("#")[0] not in visited
             and link.startswith("http")
         ]
         if children:
@@ -134,4 +177,5 @@ async def run(
         "urls": list(visited),
         "forms": forms,
         "parameters": list(params),
+        "evidence": evidence,
     }

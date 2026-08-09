@@ -24,12 +24,23 @@ from api.models import (
     ScanStatusResponse,
 )
 from scanner.engine import run_scan
+from scanner.safety import TargetSafetyError, ensure_public_target, normalise_target
 
 router = APIRouter(prefix="/api/scan", tags=["scan"])
 
 
 @router.post("/start", response_model=StartScanResponse)
 async def start_scan(config: ScanConfig, bg: BackgroundTasks):
+    if not config.authorized:
+        raise HTTPException(
+            status_code=422,
+            detail="Confirm that you are authorized to scan this target before starting.",
+        )
+    try:
+        config.target = normalise_target(config.target)
+        await ensure_public_target(config.target)
+    except TargetSafetyError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     scan_id = f"SCN-{uuid.uuid4().hex[:8].upper()}"
     state = ScanState(
         id=scan_id,

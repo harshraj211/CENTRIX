@@ -5,9 +5,14 @@ Findings routes:
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Query, HTTPException
+import uuid
+from datetime import datetime
+
+from fastapi import APIRouter, Query, HTTPException, BackgroundTasks
 import db.store as store
-from api.models import Finding
+from api.models import Finding, FindingStatus, FindingStatusUpdate, ScanProfile, ScanStage, ScanState, ScanStatus
+from scanner.engine import run_scan
+from scanner.safety import TargetSafetyError, ensure_public_target
 
 router = APIRouter(prefix="/api/findings", tags=["findings"])
 
@@ -60,3 +65,54 @@ async def get_finding(finding_id: str):
             return finding.model_dump()
 
     raise HTTPException(status_code=404, detail="Finding not found")
+
+
+@router.patch("/{finding_id}/status")
+async def update_finding_status(finding_id: str, payload: FindingStatusUpdate):
+    finding = await store.get_finding(finding_id)
+    if not finding:
+        raise HTTPException(status_code=404, detail="Finding not found")
+    finding.status = payload.status
+    await store.update_finding(finding)
+    _index_finding(finding)
+    return finding.model_dump(mode="json")
+
+
+@router.post("/{finding_id}/retest")
+async def retest_finding(finding_id: str, bg: BackgroundTasks):
+    finding = await store.get_finding(finding_id)
+    if not finding:
+        raise HTTPException(status_code=404, detail="Finding not found")
+    original_scan = await store.get_scan(finding.scan_id)
+    if not original_scan:
+        raise HTTPException(status_code=404, detail="Original scan not found")
+    if not original_scan.config.authorized:
+        raise HTTPException(status_code=403, detail="Original scan was not authorized for retesting")
+    try:
+        await ensure_public_target(finding.target)
+    except TargetSafetyError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    config = original_scan.config.model_copy(deep=True)
+    config.target = finding.target
+    config.imported_urls = [finding.target]
+    config.profile = ScanProfile.quick
+    config.max_requests = min(config.max_requests, 120)
+    config.depth = min(config.depth, 2)
+
+    scan_id = f"SCN-{uuid.uuid4().hex[:8].upper()}"
+    state = ScanState(
+        id=scan_id,
+        config=config,
+        status=ScanStatus.pending,
+        stage=ScanStage.validate,
+        progress=0,
+        started_at=datetime.utcnow(),
+    )
+    await store.create_scan(state)
+    await store.push_log(scan_id, f"[INFO] Retest queued for finding {finding_id}")
+    bg.add_task(run_scan, scan_id, config)
+    finding.status = FindingStatus.in_review
+    await store.update_finding(finding)
+    _index_finding(finding)
+    return {"scan_id": scan_id, "finding_id": finding_id, "status": "queued"}
