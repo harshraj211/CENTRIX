@@ -49,26 +49,27 @@ app.include_router(oob.router)
 app.include_router(schedules.router)
 
 
-from fastapi.middleware.wsgi import WSGIMiddleware
-from flask import Flask
-from scanner.threat_intel.routes import threat_intel_bp
+try:
+    from fastapi.middleware.wsgi import WSGIMiddleware
+    from flask import Flask
+    from scanner.threat_intel.routes import threat_intel_bp
 
-threat_intel_flask_app = Flask("threat_intel")
-threat_intel_flask_app.register_blueprint(threat_intel_bp)
+    threat_intel_flask_app = Flask("threat_intel")
+    threat_intel_flask_app.register_blueprint(threat_intel_bp)
 
+    class ThreatIntelWSGIApp:
+        def __init__(self, app):
+            self.app = app
 
-class ThreatIntelWSGIApp:
-    def __init__(self, app):
-        self.app = app
+        def __call__(self, environ, start_response):
+            path = environ.get("PATH_INFO", "")
+            if not path.startswith("/api/threat-intel"):
+                environ["PATH_INFO"] = "/api/threat-intel" + path
+            return self.app(environ, start_response)
 
-    def __call__(self, environ, start_response):
-        path = environ.get("PATH_INFO", "")
-        if not path.startswith("/api/threat-intel"):
-            environ["PATH_INFO"] = "/api/threat-intel" + path
-        return self.app(environ, start_response)
-
-
-app.mount("/api/threat-intel", WSGIMiddleware(ThreatIntelWSGIApp(threat_intel_flask_app)))
+    app.mount("/api/threat-intel", WSGIMiddleware(ThreatIntelWSGIApp(threat_intel_flask_app)))
+except ImportError as err:
+    print(f"[WARN] Threat Intel Flask routes not mounted: {err}")
 
 
 @app.on_event("startup")
