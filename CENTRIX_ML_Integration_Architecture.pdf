@@ -1,0 +1,232 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 9 0 R 11 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Length 7561 >>
+stream
+0.06 0.09 0.16 rg 36 735 540 42 re f
+1 1 1 rg BT /F2 16 Tf 1 0 0 1 48 752 Tm (CENTRIX ML Threat Intelligence & Architecture) Tj ET
+0.7 0.88 0.98 rg BT /F3 9.5 Tf 1 0 0 1 48 740 Tm (Whitepaper & Technical Rationale: RAG vs. Model Fine-Tuning & Custom Training) Tj ET
+0.01 0.52 0.78 RG 2 w 36 725 m 576 725 l S
+0.06 0.09 0.16 rg BT /F2 13 Tf 1 0 0 1 36 702 Tm (1. Executive Summary & Architecture Overview) Tj ET
+0.2 0.25 0.33 rg BT /F1 9.5 Tf 1 0 0 1 36 686 Tm (The CENTRIX Threat Intelligence Engine integrates local machine learning capabilities to enrich security scan) Tj ET
+0.2 0.25 0.33 rg BT /F1 9.5 Tf 1 0 0 1 36 673 Tm (findings with deep, actionable vulnerability reasoning. The system combines local Large Language Model \(LLM\)) Tj ET
+0.2 0.25 0.33 rg BT /F1 9.5 Tf 1 0 0 1 36 660 Tm (reasoning via Ollama \(qwen2.5-coder\) with a high-performance vector store \(ChromaDB\) to achieve real-time,) Tj ET
+0.2 0.25 0.33 rg BT /F1 9.5 Tf 1 0 0 1 36 647 Tm (privacy-preserving threat intelligence without transmitting proprietary codebase findings to external cloud APIs.) Tj ET
+0.96 0.98 1 rg 0.8 0.88 0.95 RG 1 w 36 515 540 115 re B
+0.06 0.09 0.16 rg BT /F2 10 Tf 1 0 0 1 46 612 Tm (Key Architecture Modules:) Tj ET
+0.01 0.52 0.78 rg BT /F2 8.5 Tf 1 0 0 1 46 596 Tm (Multi-Source Advisory Feeds:) Tj ET
+0.1 0.1 0.1 rg BT /F1 8.5 Tf 1 0 0 1 185 596 Tm (Automated sync for NVD \(CVE API 2.0\), GHSA \(GraphQL\), CISA-KEV, & Exploit-DB.) Tj ET
+0.01 0.52 0.78 rg BT /F2 8.5 Tf 1 0 0 1 46 581 Tm (Language-Aware Normalization:) Tj ET
+0.1 0.1 0.1 rg BT /F1 8.5 Tf 1 0 0 1 185 581 Tm (Canonical AdvisoryRecord dataclass with language inference \(Python, PHP, JS, etc.\).) Tj ET
+0.01 0.52 0.78 rg BT /F2 8.5 Tf 1 0 0 1 46 566 Tm (ChromaDB Vector Store:) Tj ET
+0.1 0.1 0.1 rg BT /F1 8.5 Tf 1 0 0 1 185 566 Tm (Dense nomic-embed-text embeddings stored locally with metadata-level language filtering.) Tj ET
+0.01 0.52 0.78 rg BT /F2 8.5 Tf 1 0 0 1 46 551 Tm (Automated Scan Enrichment:) Tj ET
+0.1 0.1 0.1 rg BT /F1 8.5 Tf 1 0 0 1 185 551 Tm (Stage 5 Analyze pipeline automatically enriches findings with structured JSON AI fields.) Tj ET
+0.01 0.52 0.78 rg BT /F2 8.5 Tf 1 0 0 1 46 536 Tm (Anti-Hallucination Guardrails:) Tj ET
+0.1 0.1 0.1 rg BT /F1 8.5 Tf 1 0 0 1 185 536 Tm (Confidence badges \(1-10\) & automated warnings when cited CVEs miss retrieved context.) Tj ET
+0.06 0.09 0.16 rg BT /F2 13 Tf 1 0 0 1 36 485 Tm (2. Comparative Matrix: RAG vs. Fine-Tuning vs. Model Training) Tj ET
+0.2 0.25 0.33 rg BT /F1 9.5 Tf 1 0 0 1 36 468 Tm (A foundational design decision in building CENTRIX ML was evaluating whether to fine-tune an LLM, train a custom) Tj ET
+0.2 0.25 0.33 rg BT /F1 9.5 Tf 1 0 0 1 36 455 Tm (model on external security datasets, or implement Retrieval-Augmented Generation \(RAG\). The table below summarizes) Tj ET
+0.2 0.25 0.33 rg BT /F1 9.5 Tf 1 0 0 1 36 442 Tm (key operational trade-offs:) Tj ET
+0.06 0.09 0.16 rg 36 410 540 20 re f
+1 1 1 rg BT /F2 8.5 Tf 1 0 0 1 42 416 Tm (Evaluation Criteria) Tj ET
+1 1 1 rg BT /F2 8.5 Tf 1 0 0 1 150 416 Tm (CENTRIX RAG Pipeline [Chosen]) Tj ET
+1 1 1 rg BT /F2 8.5 Tf 1 0 0 1 310 416 Tm (LLM Fine-Tuning) Tj ET
+1 1 1 rg BT /F2 8.5 Tf 1 0 0 1 440 416 Tm (Full Model Training) Tj ET
+0.96 0.98 1 rg 36 352 540 58 re f
+0.8 0.85 0.9 RG 0.5 w 36 352 540 58 re s
+0.06 0.09 0.16 rg BT /F2 8 Tf 1 0 0 1 40 398 Tm (Knowledge Recency
+\(New) Tj ET
+0.06 0.09 0.16 rg BT /F2 8 Tf 1 0 0 1 40 388 Tm (CVEs/Zero-Days\)) Tj ET
+0.01 0.4 0.65 rg BT /F1 7.5 Tf 1 0 0 1 150 398 Tm (INSTANT \(Real-Time\)
+DB updates in seconds) Tj ET
+0.01 0.4 0.65 rg BT /F1 7.5 Tf 1 0 0 1 150 388.5 Tm (without retraining.) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 310 398 Tm (STALE / STATIC
+Frozen at training) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 310 388.5 Tm (epoch. Retraining is expensive.) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 440 398 Tm (STALE / STATIC
+Takes weeks/months) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 440 388.5 Tm (to retrain model weights.) Tj ET
+1 1 1 rg 36 294 540 58 re f
+0.8 0.85 0.9 RG 0.5 w 36 294 540 58 re s
+0.06 0.09 0.16 rg BT /F2 8 Tf 1 0 0 1 40 340 Tm (Hallucination Risk
+&) Tj ET
+0.06 0.09 0.16 rg BT /F2 8 Tf 1 0 0 1 40 330 Tm (Citation Audit) Tj ET
+0.01 0.4 0.65 rg BT /F1 7.5 Tf 1 0 0 1 150 340 Tm (STRICTLY GROUNDED
+Direct CVE citations &) Tj ET
+0.01 0.4 0.65 rg BT /F1 7.5 Tf 1 0 0 1 150 330.5 Tm (hallucination detection warnings.) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 310 340 Tm (HIGH RISK
+Generates plausible but) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 310 330.5 Tm (fake CVE IDs and patch notes.) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 440 340 Tm (HIGH RISK
+Prone to hallucinating) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 440 330.5 Tm (parameters & severity scores.) Tj ET
+0.96 0.98 1 rg 36 236 540 58 re f
+0.8 0.85 0.9 RG 0.5 w 36 236 540 58 re s
+0.06 0.09 0.16 rg BT /F2 8 Tf 1 0 0 1 40 282 Tm (Catastrophic
+Forgetting) Tj ET
+0.01 0.4 0.65 rg BT /F1 7.5 Tf 1 0 0 1 150 282 Tm (ZERO LOSS
+Base LLM retains full code) Tj ET
+0.01 0.4 0.65 rg BT /F1 7.5 Tf 1 0 0 1 150 272.5 Tm (parsing & JSON reasoning skills.) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 310 282 Tm (SEVERE DEGRADATION
+Fine-tuning) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 310 272.5 Tm (degrades core code syntax & JSON) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 310 263.0 Tm (formatting.) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 440 282 Tm (HIGH RISK
+Requires massive) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 440 272.5 Tm (multi-task dataset to avoid logic) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 440 263.0 Tm (loss.) Tj ET
+1 1 1 rg 36 178 540 58 re f
+0.8 0.85 0.9 RG 0.5 w 36 178 540 58 re s
+0.06 0.09 0.16 rg BT /F2 8 Tf 1 0 0 1 40 224 Tm (Data Privacy &
+Air-Gap) Tj ET
+0.06 0.09 0.16 rg BT /F2 8 Tf 1 0 0 1 40 214 Tm (Support) Tj ET
+0.01 0.4 0.65 rg BT /F1 7.5 Tf 1 0 0 1 150 224 Tm (100% LOCAL / ON-PREM
+Vectors stay inside) Tj ET
+0.01 0.4 0.65 rg BT /F1 7.5 Tf 1 0 0 1 150 214.5 Tm (.wraith/chroma_db locally via Ollama.) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 310 224 Tm (PRIVACY EXPOSURE
+Requires) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 310 214.5 Tm (exporting logs/findings to) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 310 205.0 Tm (training clusters.) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 440 224 Tm (HIGH PRIVACY RISK
+External dataset) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 440 214.5 Tm (pipeline exposure risks compliance.) Tj ET
+0.96 0.98 1 rg 36 120 540 58 re f
+0.8 0.85 0.9 RG 0.5 w 36 120 540 58 re s
+0.06 0.09 0.16 rg BT /F2 8 Tf 1 0 0 1 40 166 Tm (Compute Cost) Tj ET
+0.06 0.09 0.16 rg BT /F2 8 Tf 1 0 0 1 40 156 Tm (&
+Infrastructure) Tj ET
+0.01 0.4 0.65 rg BT /F1 7.5 Tf 1 0 0 1 150 166 Tm (ULTRA LOW COST
+Runs on local developer) Tj ET
+0.01 0.4 0.65 rg BT /F1 7.5 Tf 1 0 0 1 150 156.5 Tm (CPU/GPU. $0 cluster training cost.) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 310 166 Tm (HIGH COST
+Requires multi-GPU) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 310 156.5 Tm (hardware \(A100/H100\) per update) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 310 147.0 Tm (run.) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 440 166 Tm (EXTREMELY EXPENSIVE
+Millions in) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 440 156.5 Tm (compute, dataset labeling, and) Tj ET
+0.2 0.2 0.2 rg BT /F1 7.5 Tf 1 0 0 1 440 147.0 Tm (hardware.) Tj ET
+0.5 0.5 0.5 RG 0.5 w 36 30 m 576 30 l S
+0.4 0.4 0.4 rg BT /F1 8 Tf 1 0 0 1 36 18 Tm (CENTRIX Security Framework - ML Threat Intelligence Architecture Whitepaper) Tj ET
+0.4 0.4 0.4 rg BT /F1 8 Tf 1 0 0 1 535 18 Tm (Page 1 of 3) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+8 0 obj
+<< /Length 4788 >>
+stream
+0.06 0.09 0.16 rg 36 745 540 28 re f
+1 1 1 rg BT /F2 12 Tf 1 0 0 1 48 754 Tm (3. Deep Technical Rationale: Why RAG Beats Fine-Tuning) Tj ET
+0.01 0.52 0.78 rg BT /F2 11 Tf 1 0 0 1 36 720 Tm (A. Real-Time Zero-Day Adaptability vs. Static Training Cutoffs) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 704 Tm (Threat intelligence is an inherently dynamic domain. Public vulnerability repositories \(NVD, GHSA, CISA-KEV\) publish) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 691.5 Tm (over 100 new CVEs and exploit proofs-of-concept every single day. Fine-tuned or custom-trained models suffer from) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 679.0 Tm (immediate knowledge staleness because their knowledge base is strictly locked at their last training epoch. Retraining a) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 666.5 Tm (model daily or weekly to incorporate new CVEs requires continuous GPU compute pipelines, dataset curation, and regression) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 654.0 Tm (testing - making it operationally infeasible.) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 635.25 Tm (CENTRIX RAG decouples knowledge storage from reasoning logic. When a new CVE or Exploit-DB entry is ingested into) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 622.75 Tm (ChromaDB \(via background feed sync or ingest_exploits.py\), it is instantly searchable by the RAG engine within seconds.) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 610.25 Tm (The underlying LLM \(qwen2.5-coder\) does not need to be retrained or modified to reason over brand new vulnerabilities.) Tj ET
+0.01 0.52 0.78 rg BT /F2 11 Tf 1 0 0 1 36 589 Tm (B. Prevention of Catastrophic Forgetting & Format Instability) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 573 Tm (Fine-tuning a general-purpose coding LLM on security text datasets triggers 'catastrophic forgetting' - a phenomenon) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 560.5 Tm (where the model's weight adjustments for vulnerability data degrade its general reasoning capabilities. Specifically,) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 548.0 Tm (fine-tuned security models frequently lose the ability to parse complex multi-language source code syntax \(Python, JS,) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 535.5 Tm (Java\) and fail to output strict JSON schemas required by automated security reporting pipelines.) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 516.75 Tm (CENTRIX RAG preserves 100% of the base LLM's coding and instruction-following performance. The model receives raw) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 504.25 Tm (unmodified source code alongside verbatim retrieved context chunks in the prompt, allowing it to apply pure reasoning) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 491.75 Tm (without distorting its internal representations.) Tj ET
+0.01 0.52 0.78 rg BT /F2 11 Tf 1 0 0 1 36 458 Tm (C. Elimination of Dangerous LLM Hallucinations in Audit Reports) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 442 Tm (In automated vulnerability assessments \(VAPT\), hallucinating a non-existent CVE ID or generating invalid exploit syntax) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 429.5 Tm (destroys report credibility and wastes hundreds of engineering hours on false positives. Fine-tuned models predict text) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 417.0 Tm (statistically, making them highly prone to inventing realistic-sounding but fake CVE numbers \(e.g. 'CVE-2025-99999'\).) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 398.25 Tm (CENTRIX RAG eliminates hallucination risks through a two-tier verification mechanism:
+1. Grounded Context Prompting: The) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 385.75 Tm (LLM is strictly constrained to cite only CVEs present in the retrieved ChromaDB context.
+2. Automated Hallucination) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 373.25 Tm (Detector: scanner/report_generator.py inspects LLM citations against retrieved advisories. If the model cites an uncited) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 360.75 Tm (CVE, CENTRIX injects a prominent '[WARNING] Potential LLM Hallucination' banner in the final report.) Tj ET
+0.96 0.98 1 rg 0.01 0.52 0.78 RG 1 w 36 267 540 40 re B
+0.06 0.09 0.16 rg BT /F3 8.5 Tf 1 0 0 1 46 297 Tm (Key Takeaway: RAG transforms the LLM from a fallible 'memory bank' into an intelligent, auditable reasoning engine that) Tj ET
+0.06 0.09 0.16 rg BT /F3 8.5 Tf 1 0 0 1 46 285.5 Tm (operates over verified, up-to-date threat intelligence vector stores.) Tj ET
+0.5 0.5 0.5 RG 0.5 w 36 30 m 576 30 l S
+0.4 0.4 0.4 rg BT /F1 8 Tf 1 0 0 1 36 18 Tm (CENTRIX Security Framework - ML Threat Intelligence Architecture Whitepaper) Tj ET
+0.4 0.4 0.4 rg BT /F1 8 Tf 1 0 0 1 535 18 Tm (Page 2 of 3) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 8 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+10 0 obj
+<< /Length 3642 >>
+stream
+0.06 0.09 0.16 rg 36 745 540 28 re f
+1 1 1 rg BT /F2 12 Tf 1 0 0 1 48 754 Tm (4. Enterprise Privacy, Compliance & Integration Workflow) Tj ET
+0.01 0.52 0.78 rg BT /F2 11 Tf 1 0 0 1 36 720 Tm (D. 100% On-Premise Air-Gap Compliance & Privacy) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 704 Tm (Enterprise vulnerability scanning requires absolute confidentiality. External dataset training or cloud-based) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 691.5 Tm (fine-tuning requires transmitting internal audit findings, API endpoint signatures, and proprietary source code snippets) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 679.0 Tm (to external cloud APIs or third-party training clusters - violating compliance mandates \(SOC2, ISO27001, HIPAA, GDPR\).) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 660.25 Tm (CENTRIX ML operates 100% locally. Ollama runs local open-weights models \(qwen2.5-coder\), nomic-embed-text generates) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 647.75 Tm (embeddings on-device, and ChromaDB stores vector indices inside .wraith/chroma_db. No data ever leaves the host system.) Tj ET
+0.06 0.09 0.16 rg BT /F2 13 Tf 1 0 0 1 36 594 Tm (5. Complete CENTRIX ML Data Flow & Workflow) Tj ET
+0.96 0.98 1 rg 0.8 0.88 0.95 RG 1 w 36 399 540 170 re B
+0.01 0.52 0.78 rg BT /F2 9 Tf 1 0 0 1 46 559 Tm (1. Data Ingestion:) Tj ET
+0.1 0.1 0.1 rg BT /F1 8.5 Tf 1 0 0 1 150 559 Tm (NVD, GHSA, CISA-KEV & Exploit-DB feeds fetch raw advisories into canonical AdvisoryRecords.) Tj ET
+0.01 0.52 0.78 rg BT /F2 9 Tf 1 0 0 1 46 534 Tm (2. Local Vector Store:) Tj ET
+0.1 0.1 0.1 rg BT /F1 8.5 Tf 1 0 0 1 150 534 Tm (Text is chunked into 600-char windows, embedded via nomic-embed-text, & indexed in ChromaDB.) Tj ET
+0.01 0.52 0.78 rg BT /F2 9 Tf 1 0 0 1 46 509 Tm (3. Scan Execution:) Tj ET
+0.1 0.1 0.1 rg BT /F1 8.5 Tf 1 0 0 1 150 509 Tm (CENTRIX DAST engine probes target endpoints and identifies raw vulnerability findings.) Tj ET
+0.01 0.52 0.78 rg BT /F2 9 Tf 1 0 0 1 46 484 Tm (4. RAG Enrichment:) Tj ET
+0.1 0.1 0.1 rg BT /F1 8.5 Tf 1 0 0 1 150 484 Tm (scanner/report_generator.py passes findings to RagEngine for vector retrieval & LLM reasoning.) Tj ET
+0.01 0.52 0.78 rg BT /F2 9 Tf 1 0 0 1 46 459 Tm (5. Report Generation:) Tj ET
+0.1 0.1 0.1 rg BT /F1 8.5 Tf 1 0 0 1 150 459 Tm (Enriched findings are output as HTML/PDF reports complete with confidence scores & warnings.) Tj ET
+0.01 0.52 0.78 rg BT /F2 9 Tf 1 0 0 1 46 434 Tm (6. REST & CLI Access:) Tj ET
+0.1 0.1 0.1 rg BT /F1 8.5 Tf 1 0 0 1 150 434 Tm (FastAPI endpoints \(/api/threat-intel/*\) and centrix-intel CLI expose the intelligence pipeline.) Tj ET
+0.06 0.09 0.16 rg BT /F2 13 Tf 1 0 0 1 36 374 Tm (6. Conclusion & Recommendation) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 358 Tm (By choosing Retrieval-Augmented Generation over Model Fine-Tuning and External Dataset Training, CENTRIX delivers an) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 345 Tm (ML-powered vulnerability intelligence engine that is real-time adaptable, mathematically auditable, 100% private, and) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 332 Tm (compute-efficient. This architecture ensures security auditors receive state-of-the-art AI insights backed by verifiable) Tj ET
+0.2 0.25 0.33 rg BT /F1 9 Tf 1 0 0 1 36 319 Tm (threat advisories without the operational overhead, latency, and hallucination risks of traditional fine-tuning.) Tj ET
+0.5 0.5 0.5 RG 0.5 w 36 30 m 576 30 l S
+0.4 0.4 0.4 rg BT /F1 8 Tf 1 0 0 1 36 18 Tm (CENTRIX Security Framework - ML Threat Intelligence Architecture Whitepaper) Tj ET
+0.4 0.4 0.4 rg BT /F1 8 Tf 1 0 0 1 535 18 Tm (Page 3 of 3) Tj ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 10 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>
+endobj
+xref
+0 12
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000134 00000 n 
+0000000231 00000 n 
+0000000333 00000 n 
+0000000438 00000 n 
+0000008051 00000 n 
+0000008197 00000 n 
+0000013037 00000 n 
+0000013183 00000 n 
+0000016878 00000 n 
+trailer
+<< /Size 12 /Root 1 0 R >>
+startxref
+17026
+%%EOF

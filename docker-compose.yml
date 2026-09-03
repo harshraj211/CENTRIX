@@ -1,0 +1,20 @@
+services:
+  api:
+    build: ./backend
+    environment:
+      CENTRIX_DB_PATH: /app/data/centrix.db
+    volumes:
+      - centrix-data:/app/data
+    ports:
+      - "8000:8000"
+  web:
+    build: ./FrontEnd
+    environment:
+      VITE_API_BASE: http://localhost:8000
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  centrix-data:
