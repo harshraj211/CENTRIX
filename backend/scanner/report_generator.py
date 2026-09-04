@@ -175,11 +175,17 @@ def generate_html_ai_report(
         refs = f.get("ai_references") or []
         refs_html = ", ".join(f'<span class="ref-tag">{html.escape(str(r))}</span>' for r in refs) if refs else "None"
 
+        classification = html.escape(str(f.get("classification") or f.get("confidence") or "Tentative"))
+        conf_score = f.get("confidence_score", f.get("ai_confidence", 4))
+        why_fp = f.get("why_false_positive_risk")
+        if why_fp:
+            warnings_html += f'<div class="warning-banner" style="background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; color: #fbbf24;"><strong>False-Positive Risk Note:</strong> {html.escape(str(why_fp))}</div>'
+
         card = f"""
         <div class="card">
             <div class="card-header">
-                <div class="vuln-title">#{idx} {f_type}</div>
-                <div class="badge {badge_cls}">AI Confidence: {confidence}/10</div>
+                <div class="vuln-title">#{idx} {f_type} <span style="font-size: 0.8rem; font-weight: normal; color: #94a3b8;">[{classification}]</span></div>
+                <div class="badge {badge_cls}">Confidence: {conf_score}/10 ({classification})</div>
             </div>
             <div class="card-body">
                 {warnings_html}
@@ -210,6 +216,7 @@ def generate_html_ai_report(
         vuln_cards_html.append(card)
 
     cards_body = "\n".join(vuln_cards_html) if vuln_cards_html else "<p>No vulnerabilities reported.</p>"
+
 
     html_content = f"""<!DOCTYPE html>
 <html lang="en">

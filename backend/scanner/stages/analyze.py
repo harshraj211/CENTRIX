@@ -10,8 +10,10 @@ import hashlib
 import uuid
 from datetime import datetime
 from typing import Callable, Awaitable
+from urllib.parse import urlparse
 
-from api.models import Finding, Severity, FindingStatus
+import db.store as store
+from api.models import Finding, Severity, FindingStatus, FindingClassification
 
 # ── Static lookup tables — O(1) ────────────────────────────────────────────
 _CWE_MAP: dict[str, str] = {
@@ -250,41 +252,211 @@ _RECOMMENDATION_MAP: dict[str, str] = {
 }
 
 
+from api.models import Finding, Severity, FindingStatus, FindingClassification
+from scanner.validation.baseline import detect_error_or_waf, compare_responses
+from scanner.validation.scorer import calculate_evidence_score
+from scanner.validation.detectors import (
+    is_observation_signal,
+    validate_xss_candidate,
+    redact_sensitive_tokens,
+)
+from agent.debate import debate_engine
+
+
 async def run(
     scan_id: str,
     raw_vulns: list[dict],
     log: Callable[[str], Awaitable[None]],
+    aggregate_headers: bool = False,
 ) -> list[Finding]:
-    """Deduplicates and converts raw probe results to Finding objects."""
-    await log(f"[INFO] Analyzing {len(raw_vulns)} raw vulnerability candidates...")
+    """
+    Evidence-based Vulnerability Analysis & False-Positive Reduction Pipeline:
+    1. Normalizes and deduplicates candidates.
+    2. Aggregates systemic issues (e.g. missing security headers) across endpoints when enabled.
+    3. Evaluates error/WAF/redirect response artifacts.
+    4. Computes deterministic confidence scores (+2, -2, -3 rules).
+    5. Categorizes findings into Confirmed, Probable, Tentative, Informational, or Rejected.
+    6. Ensures no finding becomes Confirmed based solely on suspicious patterns.
+    """
+    await log(f"[INFO] Analyzing {len(raw_vulns)} raw vulnerability candidate(s) through false-positive reduction pipeline...")
 
-    seen: set[str] = set()   # O(1) dedup key
-    findings: list[Finding] = []
+    # Aggregation buckets for systemic issues (e.g. missing_header:X-Frame-Options)
+    header_aggregates: dict[str, dict[str, Any]] = {}
+    standard_candidates: list[dict] = []
     suppressed_noise = 0
 
     for vuln in raw_vulns:
         vtype = vuln.get("type", "unknown")
-        if vtype == "missing_header":
-            suppressed_noise += 1
-            continue
-
+        param = str(vuln.get("param", "")).strip()
         url = vuln.get("url", "")
-        param = vuln.get("param", "")
-        payload = vuln.get("payload", "")
-        evidence = vuln.get("evidence", "")
-        confidence = vuln.get("confidence", "Tentative")
 
-        # Dedup key: hash of (type, url, param) — O(1) set lookup
-        dedup_basis = f"{vtype}:{str(param).lower()}" if vtype == "missing_header" else f"{vtype}:{url}:{param}"
-        dedup_key = hashlib.md5(dedup_basis.encode()).hexdigest()
-        if dedup_key in seen:
+        if vtype == "missing_header":
+            if aggregate_headers and param:
+                header_key = param.lower()
+                if header_key not in header_aggregates:
+                    header_aggregates[header_key] = {
+                        "param": param,
+                        "urls": [],
+                        "evidence": vuln.get("evidence", ""),
+                        "first_seen": datetime.utcnow(),
+                    }
+                if url and url not in header_aggregates[header_key]["urls"]:
+                    header_aggregates[header_key]["urls"].append(url)
+            else:
+                suppressed_noise += 1
             continue
-        seen.add(dedup_key)
+        else:
+            standard_candidates.append(vuln)
+
+
+    seen_keys: set[str] = set()
+    findings: list[Finding] = []
+    rejected_count = 0
+
+    # Only artifacts already persisted for this scan count as evidence.  The
+    # candidate's free-text explanation is intentionally never treated as an
+    # evidence artifact.
+    persisted_evidence = await store.get_evidence(scan_id)
+    evidence_by_url = {item.url: item.id for item in persisted_evidence if item.url}
+
+    # 1. Process aggregated security header findings (1 finding per missing header type)
+    for header_key, agg in header_aggregates.items():
+        param_name = agg["param"]
+        affected_urls = agg["urls"]
+        count = len(affected_urls)
+        primary_url = affected_urls[0] if affected_urls else "Application Endpoints"
+
+        title = f"Missing Security Header: {param_name}"
+        desc = (
+            f"The recommended security header `{param_name}` was omitted in responses across "
+            f"{count} endpoint(s). Example: {primary_url}"
+        )
+
+        score_card = calculate_evidence_score(
+            has_exact_target_and_param=True,
+            is_reproducible=True,
+            is_observation_only=True,
+            has_persisted_evidence=True,
+        )
+
+        finding = Finding(
+            id=f"VLN-HDR-{uuid.uuid4().hex[:6].upper()}",
+            scan_id=scan_id,
+            title=title,
+            severity=Severity.low,
+            category="Security Headers",
+            target=primary_url,
+            parameter=param_name,
+            confidence="Informational",
+            classification=FindingClassification.informational,
+            status=FindingStatus.open,
+            found_at=agg["first_seen"],
+            description=desc,
+            recommendation=_RECOMMENDATION_MAP.get("missing_header", "Configure security headers."),
+            evidence=f"Header '{param_name}' missing across {count} tested endpoint(s).",
+            cwe=_CWE_MAP.get("missing_header", "CWE-693"),
+            cvss=_CVSS_MAP.get("missing_header", 5.3),
+            vuln_type="missing_header",
+            detection_source="header_audit",
+            confidence_score=score_card.total_score,
+            confidence_reasons=score_card.reasons,
+            false_positive_indicators=score_card.false_positive_indicators,
+            why_false_positive_risk="Hardening observation only; does not prove an active exploitable condition.",
+            affected_urls_count=count,
+            example_urls=affected_urls[:5],
+            validation_status="validated",
+        )
+        findings.append(finding)
+
+    # 2. Process standard vulnerability candidates
+    for vuln in standard_candidates:
+        vtype = vuln.get("type", "unknown")
+        url = vuln.get("url", "")
+        param = str(vuln.get("param", "")).strip()
+        payload = str(vuln.get("payload", ""))
+        evidence = redact_sensitive_tokens(str(vuln.get("evidence", "")))
+        status_code = int(vuln.get("status_code") or 200)
+        raw_response = str(vuln.get("response_body") or evidence)
+
+        # Deduplication key: vuln_type + normalized path + param
+        parsed_url = urlparse(url)
+        norm_path = parsed_url.path or "/"
+        dedup_key = f"{vtype}:{parsed_url.netloc}:{norm_path}:{param.lower()}"
+        if dedup_key in seen_keys:
+            continue
+        seen_keys.add(dedup_key)
+
+        # Response and error checks
+        flags = detect_error_or_waf(status_code, raw_response)
+        baseline_result = None
+        if isinstance(vuln.get("baseline"), dict) and isinstance(vuln.get("candidate"), dict):
+            baseline_result = compare_responses(vuln["baseline"], vuln["candidate"])
+            flags["is_custom_404"] = flags["is_custom_404"] or baseline_result["flags"].get("is_custom_404", False)
+            flags["is_generic_error"] = flags["is_generic_error"] or baseline_result["flags"].get("is_generic_error", False)
+
+        # Detector-specific validations
+        is_obs = is_observation_signal(vtype, evidence=evidence, param=param)
+        has_direct_impact = False
+        reproduced = False
+        independent_agreement = False
+
+        if vtype == "xss":
+            xss_check = validate_xss_candidate(raw_response, payload)
+            if xss_check["is_encoded"]:
+                flags["is_unstable_response"] = True
+            elif xss_check["is_executable"]:
+                has_direct_impact = True
+                reproduced = True
+        elif vtype in ("sqli", "command_injection", "rce", "traversal"):
+            # Only claim direct impact if unambiguous database/execution evidence is present
+            if any(sig in evidence.lower() for sig in ["syntax error", "root:", "boot.ini", "uid="]) and not flags["is_custom_404"]:
+                has_direct_impact = True
+                reproduced = True
+        elif vtype == "ssrf":
+            if "callback received" in evidence.lower():
+                has_direct_impact = True
+                reproduced = True
+            else:
+                is_obs = True  # Parameter observation only
+        elif vtype == "idor":
+            if "differential" in evidence.lower() or "unauthorized access" in evidence.lower():
+                has_direct_impact = True
+                reproduced = True
+            else:
+                is_obs = True  # Predictable ID observation only
+
+        artifact_id = vuln.get("evidence_id") or evidence_by_url.get(url)
+        evidence_artifact_ids = [str(artifact_id)] if artifact_id else []
+        has_persisted_evidence = bool(evidence_artifact_ids)
+        has_meaningful_difference = bool(
+            has_direct_impact
+            or (baseline_result and baseline_result.get("meaningful_difference"))
+        )
+
+        # Compute deterministic evidence score (+2, -2, -3 rules)
+        score_card = calculate_evidence_score(
+            has_exact_target_and_param=bool(url and (param or vtype in OBSERVATION_TYPES)),
+            is_reproducible=reproduced,
+            has_meaningful_difference=has_meaningful_difference,
+            has_direct_security_impact=has_direct_impact,
+            has_browser_confirmation=bool(vuln.get("browser_confirmed")),
+            has_independent_detector_agreement=independent_agreement,
+            is_generic_error_or_custom_404=flags["is_custom_404"] or flags["is_generic_error"],
+            is_login_redirect_or_waf=flags["is_login_redirect"] or flags["is_waf_block"],
+            is_unstable_response=flags.get("is_unstable_response", False),
+            is_observation_only=is_obs,
+            has_persisted_evidence=has_persisted_evidence,
+        )
+
+        # If rejected by deterministic evidence rules, log and suppress
+        if score_card.classification == FindingClassification.rejected:
+            rejected_count += 1
+            await log(f"[FP-SUPPRESSED] Rejected candidate: {vtype} @ {url} [{param}] - Reason: {', '.join(score_card.false_positive_indicators)}")
+            continue
 
         title = _TITLE_MAP.get(vtype, vtype.replace("_", " ").title())
-        if vtype == "missing_header":
-            title = f"Missing Security Header: {param}"
 
+        # Construct structured Finding object
         finding = Finding(
             id=f"VLN-{uuid.uuid4().hex[:6].upper()}",
             scan_id=scan_id,
@@ -293,21 +465,84 @@ async def run(
             category=_CATEGORY_MAP.get(vtype, "Misc"),
             target=url,
             parameter=param,
-            confidence=confidence,
+            confidence=score_card.confidence_label,
+            classification=score_card.classification,
             status=FindingStatus.open,
             found_at=datetime.utcnow(),
-            description=f"Detected via active probe. Payload used: `{payload[:100]}`",
+            description=f"Detected via {vuln.get('source', 'active probe')}. Payload evaluated: `{payload[:100]}`",
             recommendation=_RECOMMENDATION_MAP.get(vtype, "Review and remediate."),
             evidence=evidence,
             cwe=_CWE_MAP.get(vtype),
             cvss=_CVSS_MAP.get(vtype),
+            vuln_type=vtype,
+            detection_source=vuln.get("source", "probe_engine"),
+            detection_rule=vuln.get("rule_id"),
+            evidence_artifact_ids=evidence_artifact_ids,
+            reproduction_status="reproduced" if reproduced else "untested",
+            confidence_score=score_card.total_score,
+            confidence_reasons=score_card.reasons,
+            false_positive_indicators=score_card.false_positive_indicators,
+            validation_status="validated" if score_card.classification in (FindingClassification.confirmed, FindingClassification.probable) else "pending",
+            why_false_positive_risk="; ".join(score_card.deductions) if score_card.deductions else None,
+            affected_urls_count=1,
+            example_urls=[url],
+            request_method=str(vuln.get("method") or "GET").upper(),
+            request_headers=vuln.get("headers") or {},
+            request_body=vuln.get("body") or (payload if str(vuln.get("method") or "GET").upper() in ("POST", "PUT", "PATCH") else None),
         )
+
+        from reporting.github_issues import build_reproduction_curl
+        finding.reproduction_curl = build_reproduction_curl(finding)
+
+        # Run the model debate after deterministic validation.  The model may
+        # downgrade or reject a candidate, but it can never upgrade a finding
+        # beyond the evidence-backed deterministic classification.
+        if not is_obs:
+            try:
+                adjudication = await debate_engine.adjudicate_candidate(
+                    {**vuln, "evidence": evidence, "evidence_artifact_ids": evidence_artifact_ids,
+                     "confidence_score": score_card.total_score},
+                    has_screenshot=bool(vuln.get("screenshot") or vuln.get("screenshot_path")),
+                )
+                ai_class = str(adjudication.classification).strip().lower()
+                class_aliases = {item.value.lower(): item.value for item in FindingClassification}
+                if ai_class not in class_aliases:
+                    ai_class = FindingClassification.tentative.value
+                else:
+                    ai_class = class_aliases[ai_class]
+                if ai_class == FindingClassification.confirmed.value and score_card.classification != FindingClassification.confirmed:
+                    ai_class = score_card.classification.value
+                if ai_class == FindingClassification.rejected.value:
+                    if has_direct_impact:
+                        ai_class = FindingClassification.tentative.value
+                        finding.why_false_positive_risk = f"Debate flagged false positive risk, preserved as tentative: {adjudication.reason}"
+                    else:
+                        rejected_count += 1
+                        await log(f"[FP-SUPPRESSED] Debate rejected candidate: {vtype} @ {url} [{param}] - {adjudication.reason}")
+                        continue
+                finding.classification = FindingClassification(ai_class)
+                finding.confidence = finding.classification.value
+                finding.confidence_score = min(score_card.total_score, int(adjudication.confidence))
+                finding.confidence_reasons.extend([adjudication.reason, *adjudication.missing_validation])
+                finding.false_positive_indicators.extend(adjudication.false_positive_risks)
+                finding.why_false_positive_risk = "; ".join(dict.fromkeys(
+                    [item for item in [finding.why_false_positive_risk, *adjudication.false_positive_risks] if item]
+                )) or None
+                finding.model_review_status = "adjudicated"
+                finding.validation_status = "validated" if finding.classification in (
+                    FindingClassification.confirmed, FindingClassification.probable, FindingClassification.informational
+                ) else "pending"
+            except Exception as exc:
+                await log(f"[WARN] Debate adjudication unavailable; deterministic result retained: {exc}")
+
         findings.append(finding)
         sev = finding.severity.value
-        await log(f"[{'CRITICAL' if sev == 'Critical' else 'ALERT'}] "
-                  f"{sev} — {title} @ {url} [{param}]")
+        cls_name = finding.classification.value
+        await log(f"[{'CRITICAL' if sev == 'Critical' else 'ALERT'}] {sev} [{cls_name}, {finding.confidence_score}/10] — {title} @ {url} [{param}]")
 
-    await log(f"[SUCCESS] Analysis complete — {len(findings)} unique findings")
-    if suppressed_noise:
-        await log(f"[INFO] Suppressed {suppressed_noise} missing security-header telemetry items")
+    await log(
+        f"[SUCCESS] False-positive reduction complete: {len(findings)} validated finding(s) "
+        f"({rejected_count} rejected false-positive candidate(s) suppressed)"
+    )
     return findings
+
