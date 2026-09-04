@@ -11,7 +11,7 @@ import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import scan, findings, reports, ws, manual, imports, evidence, integrations, proof, authz, oob, schedules
+from api.routes import scan, findings, reports, ws, manual, imports, evidence, integrations, proof, authz, oob, schedules, agent
 
 app = FastAPI(
     title="VulnGuard API",
@@ -47,6 +47,7 @@ app.include_router(proof.router)
 app.include_router(authz.router)
 app.include_router(oob.router)
 app.include_router(schedules.router)
+app.include_router(agent.router)
 
 
 try:
