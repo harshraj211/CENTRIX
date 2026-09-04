@@ -51,9 +51,15 @@ async def generate_report(cfg: ReportConfig, bg: BackgroundTasks):
     elif cfg.format == "evidence":
         report.content = _build_evidence_bundle(report_id, state, findings, evidence)
     elif cfg.format == "pdf":
-        pdf_bytes = build_centrix_pdf_report(report_id, state, findings, evidence)
-        report.content = base64.b64encode(pdf_bytes).decode("ascii")
-        report.size = f"{max(1, len(pdf_bytes)) / 1024:.1f} KB"
+        try:
+            pdf_bytes = build_centrix_pdf_report(report_id, state, findings, evidence)
+            report.content = base64.b64encode(pdf_bytes).decode("ascii")
+            report.size = f"{max(1, len(pdf_bytes)) / 1024:.1f} KB"
+        except RuntimeError as err:
+            # Fallback to HTML report if reportlab is not installed
+            report.content = _build_html_report(report_id, state, findings)
+            report.format = "html"
+            report.size = f"{max(1, len((report.content or '').encode('utf-8'))) / 1024:.1f} KB"
 
     if cfg.format != "pdf":
         report.size = f"{max(1, len((report.content or '').encode('utf-8'))) / 1024:.1f} KB"

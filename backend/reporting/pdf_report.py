@@ -8,11 +8,16 @@ from io import BytesIO
 from typing import Any
 from urllib.parse import urlparse
 
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import inch
-from reportlab.platypus import PageBreak, Paragraph, Preformatted, SimpleDocTemplate, Spacer, Table, TableStyle
+try:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import inch
+    from reportlab.platypus import PageBreak, Paragraph, Preformatted, SimpleDocTemplate, Spacer, Table, TableStyle
+    HAS_REPORTLAB = True
+except ImportError:
+    HAS_REPORTLAB = False
+    colors = None
 
 from api.models import EvidenceArtifact, Finding, ScanState
 
@@ -20,11 +25,11 @@ BRAND = "Centrix"
 SCANNER_VERSION = "Centrix DAST Scanner"
 
 SEVERITY_COLORS = {
-    "Critical": colors.HexColor("#b91c1c"),
-    "High": colors.HexColor("#ea580c"),
-    "Medium": colors.HexColor("#ca8a04"),
-    "Low": colors.HexColor("#2563eb"),
-    "Info": colors.HexColor("#64748b"),
+    "Critical": colors.HexColor("#b91c1c") if colors else None,
+    "High": colors.HexColor("#ea580c") if colors else None,
+    "Medium": colors.HexColor("#ca8a04") if colors else None,
+    "Low": colors.HexColor("#2563eb") if colors else None,
+    "Info": colors.HexColor("#64748b") if colors else None,
 }
 
 OWASP_CATEGORIES = [
@@ -48,6 +53,8 @@ def build_centrix_pdf_report(
     evidence: list[EvidenceArtifact],
 ) -> bytes:
     """Return a polished multi-page Centrix PDF report as bytes."""
+    if not HAS_REPORTLAB:
+        raise RuntimeError("reportlab library is required to generate PDF reports. Install it with: pip install reportlab")
     buffer = BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -448,7 +455,7 @@ def _key_value_table(rows: list[list[str]]) -> Table:
     return table
 
 
-def _label_bar(label: str, color: colors.Color) -> Table:
+def _label_bar(label: str, color: Any) -> Table:
     table = Table([[label]], colWidths=[5.6 * inch])
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), color),
@@ -484,12 +491,13 @@ def _risk_tile_row(counts: dict[str, int], evidence_count: int) -> Table:
     return table
 
 
-def _table_style(header=colors.HexColor("#0f172a"), font_size: float = 8.0) -> TableStyle:
+def _table_style(header: Any = None, font_size: float = 8.0) -> Any:
+    header = header or (colors.HexColor("#0f172a") if colors else None)
     return TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), header),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#cbd5e1")),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white if colors else None),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#cbd5e1") if colors else None),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")] if colors else []),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("FONTSIZE", (0, 0), (-1, -1), font_size),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
