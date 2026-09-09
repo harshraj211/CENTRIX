@@ -365,7 +365,7 @@ async def run_scan(scan_id: str, config: ScanConfig, resume: bool = False) -> No
             try:
                 from scanner.report_generator import enrich_findings_with_ai
                 findings_dicts = [f.model_dump(mode="json") if hasattr(f, "model_dump") else dict(f) for f in findings]
-                enriched_dicts = enrich_findings_with_ai(findings_dicts)
+                enriched_dicts = await enrich_findings_with_ai(findings_dicts)
 
                 for idx, item in enumerate(enriched_dicts):
                     if idx < len(findings):
