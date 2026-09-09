@@ -87,7 +87,7 @@ export function ScanProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const scanActive = Boolean(
-    scanStatus && ["running", "pending"].includes(scanStatus.status?.toLowerCase()),
+    scanStatus && scanStatus.status?.toLowerCase() === "running",
   )
   const scanProgress = scanStatus?.progress ?? 0
   const scanStage = scanStatus?.stage ?? "IDLE"
@@ -131,8 +131,8 @@ export function ScanProvider({ children }: { children: React.ReactNode }) {
       )
       setFindingsCount(securityFindings.length)
 
-      // If no active scan set, check if backend currently has one running
-      const running = scans.find((s: ScanItem) => ["running", "pending"].includes(s.status?.toLowerCase()))
+      // Only pick up a scan as active if it's genuinely running (not stale pending)
+      const running = scans.find((s: ScanItem) => s.status?.toLowerCase() === "running")
       if (running) {
         setActiveScanId(running.id)
       } else if (!activeScanId && scans[0]) {
@@ -188,7 +188,7 @@ export function ScanProvider({ children }: { children: React.ReactNode }) {
     // Fetch initial status immediately
     void pollStatus(activeScanId, true).then((status) => {
       if (!isSubscribed) return
-      if (status && ["running", "pending"].includes(status.status?.toLowerCase())) {
+      if (status && status.status?.toLowerCase() === "running") {
         connectWebSocket(activeScanId)
       } else {
         setTelemetryMode("idle")
@@ -240,7 +240,7 @@ export function ScanProvider({ children }: { children: React.ReactNode }) {
           reconnectTimerRef.current = setTimeout(() => {
             if (isSubscribed) {
               void pollStatus(id, true).then((st) => {
-                if (st && ["running", "pending"].includes(st.status?.toLowerCase())) {
+                if (st && st.status?.toLowerCase() === "running") {
                   connectWebSocket(id)
                 }
               })
@@ -260,11 +260,9 @@ export function ScanProvider({ children }: { children: React.ReactNode }) {
       wsRef.current = ws
     }
 
-    // Polling Interval: Runs every 2.5s as fallback if WebSocket is not connected
+    // Polling Interval: Runs every 2s to ensure progress, stage, and metrics stay synced
     pollTimerRef.current = setInterval(() => {
       if (!isSubscribed) return
-      // If WebSocket is active, let WebSocket drive updates
-      if (wsConnected) return
 
       void pollStatus(activeScanId, false).then((status) => {
         if (!status) return
@@ -274,7 +272,7 @@ export function ScanProvider({ children }: { children: React.ReactNode }) {
           setTelemetryMode("idle")
         }
       })
-    }, 2500)
+    }, 2000)
 
     return () => {
       isSubscribed = false
@@ -300,7 +298,7 @@ export function ScanProvider({ children }: { children: React.ReactNode }) {
       setActiveScanId(scanId)
       setScanStatus({
         scan_id: scanId,
-        status: "pending",
+        status: "running",
         stage: "VALIDATE",
         progress: 0,
         findings_count: 0,
@@ -310,7 +308,7 @@ export function ScanProvider({ children }: { children: React.ReactNode }) {
         finished_at: null,
         duration_s: 0,
       })
-      void pollStatus(scanId)
+      void pollStatus(scanId, true)
       return scanId
     },
     [clearLogs, addLogMessage, setActiveScanId, pollStatus],
